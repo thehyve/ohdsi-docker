@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <cdm_name> <raw_schema>"
+  exit 1
+fi
+
+. lib/util.sh
+
+export CDM_NAME="$1"
+export RAW_SCHEMA="$2"
+export CDM_SCHEMA="cdm_${RAW_SCHEMA}"
+export RESULTS_SCHEMA="cdm_${RAW_SCHEMA}_results"
+
+echo "=== Preparing results schema ==="
+if psql_table_exists "$RESULTS_SCHEMA" "concept_hierarchy"; then
+  INIT_CONCEPT_HIERARCHY=false
+else
+  echo "Initializing concept hierarchy"
+  INIT_CONCEPT_HIERARCHY=true
+fi
+
+RESULTS_SQL=$(mktemp)
+docker-compose exec webapi curl "localhost:8080/WebAPI/ddl/results?dialect=postgresql&schema=${RESULTS_SCHEMA}&vocabSchema=vocab&tempSchema=temp&initConceptHierarchy=$INIT_CONCEPT_HIERARCHY" > "$RESULTS_SQL"
+bin/run-sql "$RESULTS_SQL"
+rm -f "$RESULTS_SQL"
+
+echo "=== RUNNING ACHILLES ==="
+bin/run-script \
+  -e ACHILLES_CDM_SCHEMA="$CDM_SCHEMA" \
+  -e ACHILLES_RES_SCHEMA="$RESULTS_SCHEMA" \
+  -e ACHILLES_SOURCE="$CDM_NAME" \
+  achilles

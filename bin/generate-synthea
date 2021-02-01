@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+docker-compose -f docker-compose.yml -f docker-compose.scripts.yml build synthea
+
+bin/run-script synthea rm -rf /code/output/csv
+
+echo "=== GENERATING SYNTHEA ==="
+exec bin/run-script synthea /code/run_synthea "$@"

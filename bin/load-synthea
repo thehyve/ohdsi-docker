@@ -1,0 +1,57 @@
+#!/bin/bash
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ $# -lt 2 ]; then
+  echo "Usage: $0 <cdm_name> <raw_schema> [<synthea options>]"
+  exit 1
+fi
+
+export CDM_NAME="$1"
+export RAW_SCHEMA="$2"
+export CDM_SCHEMA="cdm_${RAW_SCHEMA}"
+export RESULTS_SCHEMA="cdm_${RAW_SCHEMA}_results"
+export SOURCE_LIST=${SOURCE_LIST:-data/sources.csv}
+
+# Remove schema parameters
+shift 2
+
+echo "Loading Synthea data '$CDM_NAME' to schema '$CDM_SCHEMA'."
+echo "Raw data will be located in schema '$RAW_SCHEMA' and results in '$RESULTS_SCHEMA'"
+
+bin/generate-synthea "$@"
+
+echo "=== LOADING SYNTHEA ==="
+bin/run-sql src/sql/reset_source_schemas.sql
+bin/run-script \
+  -e SYNTHEA_CDM_SCHEMA="$CDM_SCHEMA" \
+  -e SYNTHEA_RAW_SCHEMA="$RAW_SCHEMA" \
+  etl-synthea
+
+bin/generate-results "$CDM_NAME" "$RAW_SCHEMA"
+
+# Add sources to schema list
+if [ ! -s "$SOURCE_LIST" ]; then
+  echo "source_id,name,cdm_schema,results_schema" > "$SOURCE_LIST"
+fi
+
+CONTAINS_SCHEMA=0
+{
+  read
+  while IFS="," read -r csv_source_id csv_name csv_cdm_schema results_schema; do
+    if [ "$CDM_SCHEMA" = "$csv_cdm_schema" ]; then
+      CONTAINS_SCHEMA=1
+    fi
+  done
+} < "$SOURCE_LIST"
+
+if [ $CONTAINS_SCHEMA -eq 0 ]; then
+  echo "Adding WebAPI source $CDM_SCHEMA"
+  SOURCE_ID=$(($(wc -l < "$SOURCE_LIST") + 1))
+  echo "$SOURCE_ID,$CDM_NAME,${CDM_SCHEMA},${RESULTS_SCHEMA}" >> "$SOURCE_LIST"
+  exec bin/webapi-reload-sources
+else
+  echo "WebAPI source $CDM_SCHEMA already exists"
+fi
+
+exec bin/webapi-reload-sources

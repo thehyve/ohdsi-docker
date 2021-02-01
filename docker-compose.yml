@@ -1,0 +1,253 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:2.4
+    restart: unless-stopped
+    container_name: "traefik"
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entrypoint.permanent=true
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myhttpchallenge.acme.httpchallenge=true"
+      - "--certificatesresolvers.myhttpchallenge.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myhttpchallenge.acme.email=support@thehyve.nl"
+      - "--certificatesresolvers.myhttpchallenge.acme.storage=/letsencrypt/acme.json"
+    networks:
+      - api
+      - public
+    volumes:
+      - "./etc/letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    ports:
+      - 80:80
+      - 443:443
+
+  atlas:
+    image: ${ATLAS_IMAGE}
+    networks:
+      - api
+    environment:
+      WEBAPI_URL: ${BASE_URL}/WebAPI/
+      ATLAS_HOSTNAME: ${HOSTNAME}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.atlas.rule=Host(`${HOSTNAME}`) && PathPrefix(`/atlas`)"
+      - "traefik.http.routers.atlas.entrypoints=websecure"
+      - "traefik.http.routers.atlas.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.atlas.loadbalancer.server.port=80"
+
+  webapi:
+    image: ${WEBAPI_IMAGE}
+    volumes:
+     - ./lib/webapi/drivers:/var/lib/ohdsi/webapi/drivers:ro
+    networks:
+      - api
+      - ohsdi-postgresql
+    depends_on:
+      - postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webapi.rule=Host(`${HOSTNAME}`) && PathPrefix(`/WebAPI`)"
+      - "traefik.http.routers.webapi.entrypoints=websecure"
+      - "traefik.http.routers.webapi.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.webapi.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.webapi.headers.accesscontrolexposeheaders=Bearer,x-auth-error,x-auth-provider,x-requested-with,x-requested-by"
+      - "traefik.http.middlewares.webapi.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
+      - "traefik.http.middlewares.webapi.headers.accesscontrolalloworigin=*"
+      - "traefik.http.middlewares.webapi.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.webapi.headers.addvaryheader=true"
+      - "traefik.http.routers.webapi.middlewares=webapi@docker"
+    environment:
+      - JAVA_OPTS=-Xmx4g
+      - CLASSPATH=":/var/lib/ohdsi/webapi/drivers/*"
+      - WEBAPI_URL=${BASE_URL}
+      - env=webapi-postgresql
+      - datasource_driverClassName=org.postgresql.Driver
+      - datasource_url=jdbc:postgresql://postgresql:5432/ohdsi
+      - datasource_cdm_schema=cdm
+      - datasource_ohdsi_schema=ohdsi
+      - datasource_username=postgres
+      - datasource_password=${POSTGRESQL_PASSWORD}
+      - spring_jpa_properties_hibernate_default__schema=ohdsi
+      - spring_jpa_properties_hibernate_dialect=org.hibernate.dialect.PostgreSQLDialect
+      - spring_batch_repository_tableprefix=ohdsi.BATCH_
+      - flyway_datasource_driverClassName=org.postgresql.Driver
+      - flyway_datasource_url=jdbc:postgresql://postgresql:5432/ohdsi
+      - flyway_schemas=ohdsi
+      - flyway_placeholders_ohdsiSchema=ohdsi
+      - flyway_datasource_username=postgres
+      - flyway_datasource_password=${POSTGRESQL_PASSWORD}
+      - flyway_locations=classpath:db/migration/postgresql
+      - security_cors_enabled=false
+      - security.provider=AtlasRegularSecurity
+      - security.origin="*"
+      - security.oid.authMethod=client_secret_basic
+      - security.oid.clientId=webapi
+      - security.oid.apiSecret=${WEBAPI_CLIENT_SECRET}
+      - security.oid.url=https://${HOSTNAME}/auth/realms/ohdsi-docker/.well-known/openid-configuration
+      - security.oid.redirectUrl=https://${HOSTNAME}/index.html#/welcome/
+      - security.oauth.callback.api=https://${HOSTNAME}/WebAPI/user/oauth/callback
+
+  postgresql:
+    image: bitnami/postgresql:13
+    shm_size: 256m
+    networks:
+      - ohsdi-postgresql
+      - jupyter-notebook
+    volumes:
+      - postgresql_data:/bitnami/postgresql
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+      - ./data/vocabulary:/data/vocabulary
+    environment:
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - PGPASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=ohdsi
+    restart: unless-stopped
+
+  keycloak-postgresql:
+    image: bitnami/postgresql:13
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_POSTGRESQL_PASSWORD}
+    volumes:
+      - keycloak_data:/bitnami/postgresql
+    networks:
+      - keycloak-postgresql
+    restart: unless-stopped
+
+  keycloak:
+    image: jboss/keycloak:12.0.2
+    restart: unless-stopped
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: keycloak-postgresql
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_PASSWORD: ${KEYCLOAK_POSTGRESQL_PASSWORD}
+      KEYCLOAK_USER: 'admin'
+      KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_HOSTNAME: ${HOSTNAME}
+      KEYCLOAK_HTTP_PORT: 80
+      PROXY_ADDRESS_FORWARDING: 'true'
+    networks:
+      - api
+      - keycloak-postgresql
+    depends_on:
+      - keycloak-postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`${HOSTNAME}`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=80"
+
+  jupyterhub:
+    restart: unless-stopped
+    build:
+      context: images/jupyterhub
+      args:
+        JUPYTERHUB_VERSION: "0.9.2"
+    depends_on:
+      - jupyterhub-postgresql
+    image: jupyterhub
+    container_name: jupyterhub
+    volumes:
+      # Bind Docker socket on the host so we can connect to the daemon from
+      # within the container
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+      # Bind Docker volume on host for JupyterHub database and cookie secrets
+      - "jupyterhub_data:/data"
+    environment:
+      DATA_VOLUME_CONTAINER: '/data'
+      DOCKER_SPAWN_CMD: 'start-singleuser.sh --SingleUserNotebookApp.default_url=/lab'
+      OAUTH2_TOKEN_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/token'
+      OAUTH2_AUTHORIZE_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/auth'
+      OAUTH2_USERNAME_KEY: 'preferred_username'
+      OAUTH_CLIENT_SECRET: '${JUPYTER_CLIENT_SECRET}'
+      OAUTH_CALLBACK_URL: 'https://console.${HOSTNAME}/hub/oauth_callback'
+      OAUTH2_USERDATA_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/userinfo'
+      OAUTH_CLIENT_ID: jupyterhub
+      #DOCKER_NOTEBOOK_IMAGE: 'jupyter/datascience-notebook'
+      DOCKER_NOTEBOOK_IMAGE: 'thehyve/ohdsi-jupyter-notebook'
+      DOCKER_NETWORK_NAME: "${COMPOSE_PROJECT_NAME}_jupyternotebook"
+      DOCKER_NOTEBOOK_DIR: '/home/jovyan'
+      DATA_VOLUME_CONTAINER: '/data/'
+      POSTGRES_HOST: 'jupyterhub-postgresql'
+      POSTGRES_DB: jupyterhub
+      POSTGRES_USER: jupyterhub
+      POSTGRES_PASSWORD: ${JUPYTERHUB_POSTGRESQL_PASSWORD}
+    networks:
+      - api
+      - jupyterhub-postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jupyter.rule=Host(`console.${HOSTNAME}`)"
+      - "traefik.http.routers.jupyter.entrypoints=websecure"
+      - "traefik.http.routers.jupyter.tls.certresolver=myhttpchallenge"
+      - "traefik.http.services.jupyter.loadbalancer.server.port=8000"
+
+  jupyterhub-postgresql:
+    image: bitnami/postgresql:13
+    environment:
+      POSTGRES_DB: jupyterhub
+      POSTGRES_USER: jupyterhub
+      POSTGRES_PASSWORD: ${JUPYTERHUB_POSTGRESQL_PASSWORD}
+    volumes:
+      - jupyterhub_data:/bitnami/postgresql
+    networks:
+      - jupyterhub-postgresql
+    restart: unless-stopped
+
+  sftp:
+    image: atmoz/sftp:alpine
+    volumes:
+       - "./sftp/init_radboud_data.sh:/etc/sftp.d/init_radboud_data.sh"
+       - "./sftp/users.conf:/etc/sftp/users.conf:ro"
+       - "sftp_radboud_home:/home/radboud/data"
+       - "/etc/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
+       - "./sftp/radboud_id_ed25519.pub:/home/radboud/.ssh/keys/id_ed25519.pub:ro"
+       - "./sftp/radboud_stefan_id_rsa.pub:/home/radboud/.ssh/keys/id_rsa.pub:ro"
+    ports:
+       - "2222:22"
+
+volumes:
+  postgresql_data:
+    driver: local
+  keycloak_data:
+    driver: local
+  jupyterhub_data:
+    driver: local
+  jupyterhub_db:
+    driver: local
+  sftp_radboud_home:
+    driver: local
+#  jh_shared:
+#    driver: local
+
+networks:
+  public:
+    driver: bridge
+    internal: false
+  api:
+    driver: bridge
+    internal: true
+  keycloak-postgresql:
+    driver: bridge
+    internal: true
+  jupyterhub-postgresql:
+    driver: bridge
+    internal: true
+  ohsdi-postgresql:
+    driver: bridge
+    internal: true
+  jupyter-notebook:
+    driver: bridge
+    internal: false

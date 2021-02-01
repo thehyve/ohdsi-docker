@@ -1,0 +1,58 @@
+version: '3'
+
+services:
+  r:
+    image: thehyve/ohdsi-r-base
+    depends_on:
+      - postgresql
+    networks:
+      - default
+      - ohdsi_postgres
+    volumes:
+      - ./src/r:/scripts
+      - ./data/omop_vocabulary:/data/omop-vocabulary
+
+  achilles:
+    image: thehyve/ohdsi-achilles
+    depends_on:
+      - postgresql
+    networks:
+      - default
+      - ohdsi_postgres
+    environment:
+      - ACHILLES_DB_URI=postgresql://postgres:${POSTGRESQL_PASSWORD}@postgresql/ohdsi
+      - ACHILLES_VOCAB_SCHEMA=vocab
+      - ACHILLES_CDM_SCHEMA=cdm5
+      - ACHILLES_RES_SCHEMA=cdm5
+      - ACHILLES_SOURCE="Synthea"
+
+  etl-synthea:
+    image: thehyve/ohdsi-etl-synthea
+    depends_on:
+      - postgresql
+    networks:
+      - default
+      - ohdsi_postgres
+    volumes:
+      - synthea_data:/data/synthea
+    environment:
+      - SYNTHEA_DB_URI=postgresql://postgres:${POSTGRESQL_PASSWORD}@postgresql/ohdsi
+      - SYNTHEA_VOCAB_SCHEMA=vocab
+
+  synthea:
+    image: thehyve/synthea:2.5.0
+    build:
+      context: images/synthea
+      args:
+        SYNTHEA_VERSION: "2.5.0"
+    volumes:
+      - synthea_data:/code/output
+    command: ["/code/run_synthea"]
+
+  notebook:
+    image: thehyve/ohdsi-jupyter-notebook
+    build:
+      context: images/notebook
+
+volumes:
+  synthea_data: {}

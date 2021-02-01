@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+. lib/util.sh
+
+echo "=== WAITING FOR WEBAPI ==="
+psql_wait_table ohdsi source_daimon
+
+echo "=== UPDATING WEBAPI ==="
+bin/run-sql src/sql/webapi/drop_sources.sql
+
+SOURCE_LIST=${SOURCE_LIST:-data/sources.csv}
+
+# Read sources from CSV
+if [ ! -s "$SOURCE_LIST" ]; then
+  echo "source_id,name,cdm_schema,results_schema" > "$SOURCE_LIST"
+fi
+
+{
+  read
+  while IFS="," read -r source_id cdm_name cdm_schema results_schema; do
+    ID="$source_id" NAME="$cdm_name" CDM_SCHEMA="$cdm_schema" RESULTS_SCHEMA="$results_schema" bin/run-sql src/sql/webapi/add_source.sql
+  done
+} < "$SOURCE_LIST"
+
+exec docker-compose restart webapi

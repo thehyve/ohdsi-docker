@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ ! -f ./.env ]; then
+  echo ".env configuration should be set"
+  exit 1
+fi
+
+if ! git lfs >/dev/null 2>&1; then
+  echo "Install Git LFS first for loading vocabularies"
+  exit 1
+fi
+
+if head -n 1 data/omop_vocabulary/CONCEPT.csv | grep -q "version https://git-lfs.github.com"; then
+  echo "Check out Git LFS vocabulary files before starting. Run:"
+  echo
+  echo "  git lfs pull"
+  echo
+  exit 1
+fi
+
+. lib/util.sh
+
+docker-compose up -d postgresql
+
+echo "=== WAITING FOR POSTGRES ==="
+psql_wait_ready
+
+docker-compose up -d
+
+if ! psql_table_exists vocab concept; then
+  echo "=== LOADING VOCABULARY ==="
+  bin/run-sql src/sql/load_vocabulary.sql
+else
+  echo "=== VOCABULARY ALREADY LOADED ==="
+fi

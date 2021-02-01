@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [ $# != 1 ]; then
+  echo "Usage: $0 <sql-cmd>"
+  exit 1
+fi
+
+exec docker-compose exec postgresql psql -h localhost -U postgres --echo-queries ohdsi -c "$1"
