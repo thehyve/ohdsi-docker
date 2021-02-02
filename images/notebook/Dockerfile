@@ -1,4 +1,4 @@
-ARG BASE_CONTAINER=jupyter/datascience-notebook
+ARG BASE_CONTAINER=jupyter/datascience-notebook:lab-3.0.5
 FROM $BASE_CONTAINER
 
 USER $NB_UID

@@ -7,7 +7,7 @@ services:
       - postgresql
     networks:
       - default
-      - ohdsi_postgres
+      - ohdsi-postgresql
     volumes:
       - ./src/r:/scripts
       - ./data/omop_vocabulary:/data/omop-vocabulary
@@ -18,7 +18,7 @@ services:
       - postgresql
     networks:
       - default
-      - ohdsi_postgres
+      - ohdsi-postgresql
     environment:
       - ACHILLES_DB_URI=postgresql://postgres:${POSTGRESQL_PASSWORD}@postgresql/ohdsi
       - ACHILLES_VOCAB_SCHEMA=vocab
@@ -32,7 +32,7 @@ services:
       - postgresql
     networks:
       - default
-      - ohdsi_postgres
+      - ohdsi-postgresql
     volumes:
       - synthea_data:/data/synthea
     environment:
@@ -44,7 +44,7 @@ services:
     build:
       context: images/synthea
       args:
-        SYNTHEA_VERSION: "2.5.0"
+        SYNTHEA_VERSION: "2.6.1"
     volumes:
       - synthea_data:/code/output
     command: ["/code/run_synthea"]

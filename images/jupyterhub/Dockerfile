@@ -1,9 +1,18 @@
-ARG JUPYTERHUB_VERSION=0.9.2
-FROM jupyterhub/jupyterhub-onbuild:${JUPYTERHUB_VERSION}
+ARG JUPYTERHUB_VERSION=1.3.0
+FROM jupyterhub/jupyterhub:${JUPYTERHUB_VERSION}
 
-RUN /opt/conda/bin/conda update -n root conda && \
-    /opt/conda/bin/conda install -yq psycopg2 ruamel.yaml && \
-    /opt/conda/bin/conda clean -tipsy && \
-    /opt/conda/bin/pip install --no-cache-dir \
+ENV PATH=/opt/conda/condabin:/opt/conda/bin:$PATH
+
+RUN curl -O# https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda && \
+    conda install -yq psycopg2 ruamel.yaml && \
+    conda clean -tipsy && \
+    pip install --no-cache-dir \
         dockerspawner \
         oauthenticator
+
+RUN useradd jovyan
+
+COPY jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
+
+CMD ["jupyterhub", "-f", "/etc/jupyterhub/jupyterhub_config.py"]
