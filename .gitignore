@@ -1,2 +1,6 @@
 .env
 etc/letsencrypt/acme.json
+data/vocabulary/*.csv
+data/vocabulary/*.gz
+data/vocabulary/*.zip
+data/sources.csv
