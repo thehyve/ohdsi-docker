@@ -44,7 +44,7 @@ services:
     build:
       context: images/synthea
       args:
-        SYNTHEA_VERSION: "2.6.1"
+        SYNTHEA_VERSION: "2.5.0"
     volumes:
       - synthea_data:/code/output
     command: ["/code/run_synthea"]

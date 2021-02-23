@@ -9,6 +9,7 @@ if [ $# -lt 2 ]; then
 fi
 
 . lib/util.sh
+. .env
 
 export CDM_NAME="$1"
 export RAW_SCHEMA="$2"
@@ -24,7 +25,9 @@ else
 fi
 
 RESULTS_SQL=$(mktemp)
-docker-compose exec webapi curl "localhost:8080/WebAPI/ddl/results?dialect=postgresql&schema=${RESULTS_SCHEMA}&vocabSchema=vocab&tempSchema=temp&initConceptHierarchy=$INIT_CONCEPT_HIERARCHY" > "$RESULTS_SQL"
+DDL_URL="${BASE_URL}/WebAPI/ddl/results?dialect=postgresql&schema=${RESULTS_SCHEMA}&vocabSchema=vocab&tempSchema=temp&initConceptHierarchy=$INIT_CONCEPT_HIERARCHY"
+echo "Querying DDL from $DDL_URL"
+curl -O "$RESULTS_SQL" -kL "${DDL_URL}"
 bin/run-sql "$RESULTS_SQL"
 rm -f "$RESULTS_SQL"
 

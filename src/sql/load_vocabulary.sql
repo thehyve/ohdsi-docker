@@ -130,25 +130,25 @@ TRUNCATE concept_class CASCADE;
 TRUNCATE domain CASCADE;
 
 -- Temporary fix to include CPT4 concepts.
-\COPY CONCEPT FROM PROGRAM 'awk ''BEGIN { FS="\t"; OFS="\t" } ; NR==1 || $2 {print;next}; {print $1, "CPT4 - " $7, $3, $4, $5, $6, $7, $8, $9, $10}'' /data/vocabulary/CONCEPT_CPT4.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT_CPT4.csv | awk ''BEGIN { FS="\t"; OFS="\t" } ; NR==1 || $2 {print;next}; {print $1, "CPT4 - " $7, $3, $4, $5, $6, $7, $8, $9, $10}''' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY DRUG_STRENGTH FROM program 'unzip -p /vocab DRUG_STRENGTH.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY DRUG_STRENGTH FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip DRUG_STRENGTH.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY CONCEPT FROM program 'unzip -p /vocab CONCEPT.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY CONCEPT_RELATIONSHIP FROM program 'unzip -p /vocab CONCEPT_RELATIONSHIP.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT_RELATIONSHIP FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT_RELATIONSHIP.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY CONCEPT_ANCESTOR FROM program 'unzip -p /vocab CONCEPT_ANCESTOR.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT_ANCESTOR FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT_ANCESTOR.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY CONCEPT_SYNONYM FROM program 'unzip -p /vocab CONCEPT_SYNONYM.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT_SYNONYM FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT_SYNONYM.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY VOCABULARY FROM program 'unzip -p /vocab VOCABULARY.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY VOCABULARY FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip VOCABULARY.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY RELATIONSHIP FROM program 'unzip -p /vocab RELATIONSHIP.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY RELATIONSHIP FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip RELATIONSHIP.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY CONCEPT_CLASS FROM program 'unzip -p /vocab CONCEPT_CLASS.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT_CLASS FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip CONCEPT_CLASS.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
-\COPY DOMAIN FROM program 'unzip -p /vocab DOMAIN.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY DOMAIN FROM PROGRAM 'unzip -p /data/vocabulary/vocab.zip DOMAIN.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
 ALTER TABLE concept ADD CONSTRAINT xpk_concept PRIMARY KEY (concept_id);
 
