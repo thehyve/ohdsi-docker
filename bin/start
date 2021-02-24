@@ -16,7 +16,7 @@ fi
 . lib/util.sh
 
 echo "=== BUILDING DOCKER IMAGES ==="
-docker-compose -f docker-compose.yml docker-compose.scripts.yml build
+docker-compose -f docker-compose.yml -f docker-compose.scripts.yml build
 
 echo "=== WAITING FOR POSTGRES ==="
 docker-compose up -d postgresql
