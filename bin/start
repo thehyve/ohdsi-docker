@@ -15,9 +15,11 @@ fi
 
 . lib/util.sh
 
-docker-compose up -d postgresql
+echo "=== BUILDING DOCKER IMAGES ==="
+docker-compose -f docker-compose.yml docker-compose.scripts.yml build
 
 echo "=== WAITING FOR POSTGRES ==="
+docker-compose up -d postgresql
 psql_wait_ready
 
 docker-compose up -d
