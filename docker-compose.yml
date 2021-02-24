@@ -217,9 +217,9 @@ services:
   sftp:
     image: atmoz/sftp:alpine
     volumes:
-       - "etc/sftp/sftp.d:/etc/sftp.d"
-       - "etc/sftp/users.conf:/etc/sftp/users.conf:ro"
-       - "etc/sftp/keys/radboud:/home/radboud/.ssh/keys"
+       - "./etc/sftp/sftp.d:/etc/sftp.d"
+       - "./etc/sftp/users.conf:/etc/sftp/users.conf:ro"
+       - "./etc/sftp/keys/radboud:/home/radboud/.ssh/keys"
        - "/etc/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro"
        - "sftp_radboud_home:/home/radboud/data"
     ports:

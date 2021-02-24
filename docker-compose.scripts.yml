@@ -10,7 +10,7 @@ services:
       - ohdsi-postgresql
     volumes:
       - ./src/r:/scripts
-      - ./data/omop_vocabulary:/data/omop-vocabulary
+      - ./data/vocabulary:/data/vocabulary
 
   achilles:
     image: thehyve/ohdsi-achilles:1.6.3
