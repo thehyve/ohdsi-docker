@@ -13,7 +13,7 @@ services:
       - ./data/omop_vocabulary:/data/omop-vocabulary
 
   achilles:
-    image: thehyve/ohdsi-achilles
+    image: thehyve/ohdsi-achilles:1.6.3
     depends_on:
       - postgresql
     networks:

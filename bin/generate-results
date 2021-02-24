@@ -27,7 +27,7 @@ fi
 RESULTS_SQL=$(mktemp)
 DDL_URL="${BASE_URL}/WebAPI/ddl/results?dialect=postgresql&schema=${RESULTS_SCHEMA}&vocabSchema=vocab&tempSchema=temp&initConceptHierarchy=$INIT_CONCEPT_HIERARCHY"
 echo "Querying DDL from $DDL_URL"
-curl -O "$RESULTS_SQL" -kL "${DDL_URL}"
+curl -kL "${DDL_URL}" > "$RESULTS_SQL"
 bin/run-sql "$RESULTS_SQL"
 rm -f "$RESULTS_SQL"
 
