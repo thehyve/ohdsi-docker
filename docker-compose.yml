@@ -217,12 +217,11 @@ services:
   sftp:
     image: atmoz/sftp:alpine
     volumes:
-       - "./sftp/init_radboud_data.sh:/etc/sftp.d/init_radboud_data.sh"
-       - "./sftp/users.conf:/etc/sftp/users.conf:ro"
+       - "etc/sftp/sftp.d:/etc/sftp.d"
+       - "etc/sftp/users.conf:/etc/sftp/users.conf:ro"
+       - "etc/sftp/keys/radboud:/home/radboud/.ssh/keys"
+       - "/etc/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro"
        - "sftp_radboud_home:/home/radboud/data"
-       - "/etc/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key"
-       - "./sftp/radboud_id_ed25519.pub:/home/radboud/.ssh/keys/id_ed25519.pub:ro"
-       - "./sftp/radboud_stefan_id_rsa.pub:/home/radboud/.ssh/keys/id_rsa.pub:ro"
     ports:
        - "2222:22"
 

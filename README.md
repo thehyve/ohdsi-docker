@@ -50,6 +50,25 @@ To fully configure WebAPI and Jupyterhub, navigate to `https://<HOSTNAME>/auth/`
 
 Any users that should get access can be created in the _Users_ tab. If they should be able to create new users themselves, select the user, _Role Mappings_, _Client Roles_ set to _realm-management_, select _realm-admin_ and press _Add selected_.
 
+### SFTP
+
+A [Docker SFTP server](https://github.com/atmoz/sftp) is exposed on port 2222 for external parties to add their data. To add a new user, edit `etc/sftp/users.conf` as stated in the linked server. For example, to create a `radboud` user, add a row
+```
+radboud::1001:101:data
+```
+to give user `radboud` user ID `1001`, group ID `101`, storing data in the `/home/radboud/data` folder. Add pubilc SSH keys of the user that should log in to `etc/sftp/keys/radboud` and mount that as a volume to `/home/radboud/.ssh/keys`. Finally, mount the data directory for use in Jupyterhub by creating a new volume in the docker-compose stack and mounting that as `sftp_radboud_data:/home/radboud/data`. The same volume should then be mounted in the Jupyter notebook image by modifying `images/jupyterhub/jupyterhub_config.py`. The variable `c.DockerSpawner.volumes` should get a new entry with
+```python
+  'sftp_radboud_home': {'bind': '/home/jovyan/shared/radboud', 'mode': 'ro'},
+```
+Now the data uploaded by Radboud is be shown in Jupyter notebooks under the directory `shared/radboud`.
+
+Rebuild the sftp and Jupyterhub stack as follows:
+```
+sudo docker-compose stop sftp
+sudo docker-compose rm -vf sftp
+sudo docker-compose up -d --build sftp jupyterhub
+```
+
 ### Scripts
 
 To load a Synthea dataset, run `bin/load-synthea <dataset_name> <dataset_schema> [<synthea parameters>]`. For example:
