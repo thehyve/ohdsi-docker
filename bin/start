@@ -25,6 +25,8 @@ psql_wait_ready
 docker-compose up -d
 
 if ! psql_table_exists vocab concept; then
+  echo "=== UNPACKING VOCABULARY ==="
+  unzip -u data/vocabulary/vocab.zip
   echo "=== LOADING VOCABULARY ==="
   bin/run-sql src/sql/load_vocabulary.sql
 else
