@@ -8,6 +8,7 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=api"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myhttpchallenge.acme.httpchallenge=true"
@@ -242,6 +243,7 @@ networks:
     driver: bridge
     internal: false
   api:
+    name: api
     driver: bridge
     internal: true
   keycloak-postgresql:
