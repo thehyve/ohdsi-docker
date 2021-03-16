@@ -130,7 +130,7 @@ TRUNCATE concept_class CASCADE;
 TRUNCATE domain CASCADE;
 
 -- Temporary fix to include CPT4 concepts.
-\COPY CONCEPT FROM PROGRAM 'awk ''BEGIN { FS="\t"; OFS="\t" } ; NR==1 || $2 {print;next}; {print $1, "CPT4 - " $7, $3, $4, $5, $6, $7, $8, $9, $10}'' CONCEPT_CPT4.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
+\COPY CONCEPT FROM PROGRAM 'awk ''BEGIN { FS="\t"; OFS="\t" } ; NR==1 || $2 {print;next}; {print $1, "CPT4 - " $7, $3, $4, $5, $6, $7, $8, $9, $10}'' /data/vocabulary/CONCEPT_CPT4.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
 \COPY DRUG_STRENGTH FROM '/data/vocabulary/DRUG_STRENGTH.csv' WITH DELIMITER E'\t' CSV HEADER QUOTE E'\b' ;
 
