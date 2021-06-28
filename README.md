@@ -4,7 +4,7 @@ Atlas and WebAPI setup, with Synthea dataset loaded. All data will be managed in
 
 ## Dependencies
 
-For loading the vocabularies, get this from an external source.
+The OHDSI vocabularies are not included in this repository, because this is a large download and they are updated regularly. The installer expects a zipped version of the vocabularies in `data/vocabulary/vocab.zip`. You can obtain these from [OHDSI Athena](https://athena.ohdsi.org).
 
 Docker and docker-compose installed, with version at least 18.06.
 
