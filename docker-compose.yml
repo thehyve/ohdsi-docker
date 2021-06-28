@@ -243,7 +243,6 @@ networks:
     driver: bridge
     internal: false
   api:
-    name: api
     driver: bridge
     internal: true
   keycloak-postgresql:
