@@ -32,6 +32,9 @@ services:
     environment:
       WEBAPI_URL: ${BASE_URL}/WebAPI/
       ATLAS_HOSTNAME: ${HOSTNAME}
+    volumes:
+      - "./etc/atlas/config-local.js:/etc/atlas/config-local.js"
+      - "./lib/atlas/atlas-replace-config-local.sh:/docker-entrypoint.d/25-atlas-replace-config-local.sh"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.atlas.rule=Host(`${HOSTNAME}`) && PathPrefix(`/atlas`)"
@@ -90,14 +93,14 @@ services:
       - flyway_datasource_password=${POSTGRESQL_PASSWORD}
       - flyway_locations=classpath:db/migration/postgresql
       - security_cors_enabled=false
-      - security.provider=AtlasRegularSecurity
-      - security.origin="*"
-      - security.oid.authMethod=client_secret_basic
-      - security.oid.clientId=webapi
-      - security.oid.apiSecret=${WEBAPI_CLIENT_SECRET}
-      - security.oid.url=https://${HOSTNAME}/auth/realms/ohdsi-docker/.well-known/openid-configuration
-      - security.oid.redirectUrl=https://${HOSTNAME}/atlas/index.html
-      - security.oauth.callback.api=https://${HOSTNAME}/WebAPI/user/oauth/callback
+      - security_provider=AtlasRegularSecurity
+      - security_origin="*"
+      - security_oid_authMethod=client_secret_basic
+      - security_oid_clientId=webapi
+      - security_oid_apiSecret=${WEBAPI_CLIENT_SECRET}
+      - security_oid_url=https://${HOSTNAME}/auth/realms/ohdsi-docker/.well-known/openid-configuration
+      - security_oid_redirectUrl=https://${HOSTNAME}/atlas/index.html
+      - security_oauth_callback_api=https://${HOSTNAME}/WebAPI/user/oauth/callback
 
   postgresql:
     image: bitnami/postgresql:13
