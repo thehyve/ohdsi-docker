@@ -4,7 +4,7 @@ Atlas and WebAPI setup, with Synthea dataset loaded. All data will be managed in
 
 ## Dependencies
 
-For loading the vocabularies, get this from an external source.
+The OHDSI vocabularies are not included in this repository, because this is a large download and they are updated regularly. The installer expects a zipped version of the vocabularies in `data/vocabulary/vocab.zip`. You can obtain these from [OHDSI Athena](https://athena.ohdsi.org).
 
 Docker and docker-compose installed, with version at least 18.06.
 
@@ -46,7 +46,10 @@ Once the stack is started, the following URL's are available:
 
 ### Keycloak
 
-To fully configure WebAPI and Jupyterhub, navigate to `https://<HOSTNAME>/auth/`. Start the admin console and login with the admin user, `KEYCLOAK_ADMIN_PASSWORD` password. At the top-left of the screen, select _Master_ and press _Add realm_. Import the realm set in `data/keycloak-realm-export.json`. Navigate to _Clients_, _jupyterhub_, _Credentials_ and copy the secret listed there. If needed, press _Regenerate Secret_ first. Copy the value of _Secret_ to `JUPYTER_CLIENT_SECRET`. Next, do the same for the _webapi_ client secret and `WEBAPI_CLIENT_SECRET`.
+To fully configure WebAPI and Jupyterhub, navigate to `https://<HOSTNAME>/auth/`. Start the admin console and login with the admin user, `KEYCLOAK_ADMIN_PASSWORD` password. At the top-left of the screen, select _Master_ and press _Add realm_. Import the realm set in `data/keycloak-realm-export.json`. Navigate to _Clients_, _jupyterhub_, _Credentials_ and copy the secret listed there. If needed, press _Regenerate Secret_ first. Copy the value of _Secret_ to `JUPYTER_CLIENT_SECRET`. Next, do the same for the _webapi_ client secret and `WEBAPI_CLIENT_SECRET`. When this step is done, please reload the jupyterhub and webapi services:
+```shell
+docker-compose up -d webapi jupyterhub
+```
 
 Any users that should get access can be created in the _Users_ tab. If they should be able to create new users themselves, select the user, _Role Mappings_, _Client Roles_ set to _realm-management_, select _realm-admin_ and press _Add selected_.
 
