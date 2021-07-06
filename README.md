@@ -8,6 +8,8 @@ The OHDSI vocabularies are not included in this repository, because this is a la
 
 Docker and docker-compose installed, with version at least 18.06.
 
+NB: it is advisable to make sure your Docker host machine has at least 50 GB of disk space available to download, build and run the images created through this repository.
+
 ## Configuration
 
 Start by copying `env.template` to `.env`. Configuration can be customized in `.env`. It has the following variables:
