@@ -10,11 +10,6 @@ services:
       - "--providers.docker.exposedbydefault=false"
       - "--providers.docker.network=api"
       - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myhttpchallenge.acme.httpchallenge=true"
-      - "--certificatesresolvers.myhttpchallenge.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myhttpchallenge.acme.email=support@thehyve.nl"
-      - "--certificatesresolvers.myhttpchallenge.acme.storage=/letsencrypt/acme.json"
     networks:
       - api
       - public
@@ -23,7 +18,6 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     ports:
       - 80:80
-      - 443:443
 
   atlas:
     image: ${ATLAS_IMAGE}
@@ -38,11 +32,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.atlas.rule=Host(`${HOSTNAME}`) && PathPrefix(`/atlas`)"
-      - "traefik.http.routers.atlas.tls.certresolver=myhttpchallenge"
-      - "traefik.http.services.atlas.loadbalancer.server.port=80"
-      - "traefik.http.middlewares.atlas-redirect-web-secure.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.atlas-redirect-web-secure.redirectscheme.permanent=true"
-      - "traefik.http.routers.atlas.middlewares=atlas-redirect-web-secure@docker"
+      - "traefik.http.services.atlas.loadbalancer.server.port=8080"
 
   webapi:
     image: ${WEBAPI_IMAGE}
@@ -56,8 +46,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.webapi.rule=Host(`${HOSTNAME}`) && PathPrefix(`/WebAPI`)"
-      - "traefik.http.routers.webapi.entrypoints=websecure"
-      - "traefik.http.routers.webapi.tls.certresolver=myhttpchallenge"
+      - "traefik.http.routers.webapi.entrypoints=web"
       - "traefik.http.services.webapi.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.cors.headers.accesscontrolexposeheaders=Bearer,x-auth-error,x-auth-provider,x-requested-with,x-requested-by"
       - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT"
@@ -66,11 +55,6 @@ services:
       - "traefik.http.middlewares.cors.headers.addvaryheader=true"
       - "traefik.http.routers.webapi.middlewares=cors@docker"
 
-      - "traefik.http.routers.webapi-http.rule=Host(`${HOSTNAME}`) && PathPrefix(`/WebAPI`)"
-      - "traefik.http.routers.webapi-http.entrypoints=web"
-      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-https.redirectscheme.permanent=true"
-      - "traefik.http.routers.webapi-http.middlewares=redirect-https@docker"
     environment:
       - JAVA_OPTS=-Xmx4g
       - CLASSPATH=":/var/lib/ohdsi/webapi/drivers/*"
@@ -98,9 +82,9 @@ services:
       - security_oid_authMethod=client_secret_basic
       - security_oid_clientId=webapi
       - security_oid_apiSecret=${WEBAPI_CLIENT_SECRET}
-      - security_oid_url=https://${HOSTNAME}/auth/realms/ohdsi-docker/.well-known/openid-configuration
-      - security_oid_redirectUrl=https://${HOSTNAME}/atlas/index.html
-      - security_oauth_callback_api=https://${HOSTNAME}/WebAPI/user/oauth/callback
+      - security_oid_url=http://keycloak:8080/auth/realms/ohdsi-docker/.well-known/openid-configuration
+      - security_oid_redirectUrl=http://${HOSTNAME}/atlas/index.html
+      - security_oauth_callback_api=http://${HOSTNAME}/WebAPI/user/oauth/callback
 
   postgresql:
     image: bitnami/postgresql:13
@@ -153,11 +137,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.keycloak.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth`)"
-      - "traefik.http.routers.keycloak.tls.certresolver=myhttpchallenge"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.keycloak-redirect-web-secure.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.keycloak-redirect-web-secure.redirectscheme.permanent=true"
-      - "traefik.http.routers.keycloak.middlewares=keycloak-redirect-web-secure@docker"
 
   jupyterhub:
     restart: unless-stopped
@@ -177,12 +157,12 @@ services:
     environment:
       DATA_VOLUME_CONTAINER: '/data'
       DOCKER_SPAWN_CMD: 'start-singleuser.sh --SingleUserNotebookApp.default_url=/lab'
-      OAUTH2_TOKEN_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/token'
-      OAUTH2_AUTHORIZE_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/auth'
+      OAUTH2_TOKEN_URL: 'http://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/token'
+      OAUTH2_AUTHORIZE_URL: 'http://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/auth'
       OAUTH2_USERNAME_KEY: 'preferred_username'
       OAUTH_CLIENT_SECRET: '${JUPYTER_CLIENT_SECRET}'
-      OAUTH_CALLBACK_URL: 'https://console.${HOSTNAME}/hub/oauth_callback'
-      OAUTH2_USERDATA_URL: 'https://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/userinfo'
+      OAUTH_CALLBACK_URL: 'http://console.${HOSTNAME}/hub/oauth_callback'
+      OAUTH2_USERDATA_URL: 'http://${HOSTNAME}/auth/realms/ohdsi-docker/protocol/openid-connect/userinfo'
       OAUTH_CLIENT_ID: jupyterhub
       #DOCKER_NOTEBOOK_IMAGE: 'jupyter/datascience-notebook'
       DOCKER_NOTEBOOK_IMAGE: 'thehyve/ohdsi-jupyter-notebook'
@@ -200,11 +180,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.jupyter.rule=Host(`console.${HOSTNAME}`)"
-      - "traefik.http.routers.jupyter.tls.certresolver=myhttpchallenge"
       - "traefik.http.services.jupyter.loadbalancer.server.port=8000"
-      - "traefik.http.middlewares.jupyter-redirect-web-secure.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.jupyter-redirect-web-secure.redirectscheme.permanent=true"
-      - "traefik.http.routers.jupyter.middlewares=jupyter-redirect-web-secure@docker"
 
   jupyterhub-postgresql:
     image: bitnami/postgresql:13
@@ -218,25 +194,12 @@ services:
       - jupyterhub-postgresql
     restart: unless-stopped
 
-  sftp:
-    image: atmoz/sftp:alpine
-    volumes:
-       - "./etc/sftp/sftp.d:/etc/sftp.d"
-       - "./etc/sftp/users.conf:/etc/sftp/users.conf:ro"
-       - "./etc/sftp/keys/radboud:/home/radboud/.ssh/keys"
-       - "/etc/ssh/ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro"
-       - "sftp_radboud_home:/home/radboud/data"
-    ports:
-       - "2222:22"
-
 volumes:
   postgresql_data:
     driver: local
   keycloak_data:
     driver: local
   jupyterhub_data:
-    driver: local
-  sftp_radboud_home:
     driver: local
 #  jh_shared:
 #    driver: local
