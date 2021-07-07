@@ -39,7 +39,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.atlas.rule=Host(`${HOSTNAME}`) && PathPrefix(`/atlas`)"
       - "traefik.http.routers.atlas.tls.certresolver=myhttpchallenge"
-      - "traefik.http.services.atlas.loadbalancer.server.port=80"
+      - "traefik.http.services.atlas.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.atlas-redirect-web-secure.redirectscheme.scheme=https"
       - "traefik.http.middlewares.atlas-redirect-web-secure.redirectscheme.permanent=true"
       - "traefik.http.routers.atlas.middlewares=atlas-redirect-web-secure@docker"
