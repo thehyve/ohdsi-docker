@@ -29,6 +29,8 @@ Ensure that the host has an entry in `/etc/hosts` with your DNS hostname:
 <IP address>   <full-hostname>  <first-part-hostname> console.<full-hostname>
 ```
 
+In the above, do not use `localhost` as the full hostname, but for example `ohdsi.localhost` to distinguish it from the localhost present in any containers.
+
 ## Usage
 
 To run the stack, run
