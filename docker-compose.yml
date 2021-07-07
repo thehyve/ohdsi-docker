@@ -11,8 +11,10 @@ services:
       - "--providers.docker.network=api"
       - "--entrypoints.web.address=:80"
     networks:
-      - api
-      - public
+      api:
+        aliases:
+          - ${HOSTNAME}
+      public: {}
     volumes:
       - "./etc/letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
@@ -82,9 +84,10 @@ services:
       - security_oid_authMethod=client_secret_basic
       - security_oid_clientId=webapi
       - security_oid_apiSecret=${WEBAPI_CLIENT_SECRET}
-      - security_oid_url=http://keycloak:8080/auth/realms/ohdsi-docker/.well-known/openid-configuration
-      - security_oid_redirectUrl=http://${HOSTNAME}/atlas/index.html
-      - security_oauth_callback_api=http://${HOSTNAME}/WebAPI/user/oauth/callback
+      - security_oid_url=${BASE_URL}/auth/realms/ohdsi-docker/.well-known/openid-configuration
+      - security_oid_redirectUrl=${BASE_URL}/atlas/#/welcome/
+      - security_oauth_callback_api=${BASE_URL}/WebAPI/user/oauth/callback
+      - security_oauth_callback_ui=${BASE_URL}/atlas/#/welcome/
 
   postgresql:
     image: bitnami/postgresql:13
@@ -127,7 +130,7 @@ services:
       KEYCLOAK_USER: 'admin'
       KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KEYCLOAK_HOSTNAME: ${HOSTNAME}
-      KEYCLOAK_HTTP_PORT: 80
+      KEYCLOAK_HTTP_PORT: 8080
       PROXY_ADDRESS_FORWARDING: 'true'
     networks:
       - api
