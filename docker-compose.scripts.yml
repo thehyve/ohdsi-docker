@@ -5,7 +5,7 @@ services:
     build:
       context: images/ohdsi-r-base
       args:
-        GITHUB_PAT: "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"
+        GITHUB_PAT: ${GITHUB_PAT}
     depends_on:
       - postgresql
     networks:
