@@ -20,6 +20,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64 \
   LD_LIBRARY_PATH=/usr/lib/jvm/java-11-openjdk-amd64/lib/server
 
 ARG GITHUB_PAT
+ENV GITHUB_PAT=$GITHUB_PAT
 
 RUN R CMD javareconf \
     && ln -s /usr/local/lib/R/site-library/littler/examples/install.r /usr/local/bin/install.r \

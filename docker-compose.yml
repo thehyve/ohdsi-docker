@@ -130,7 +130,7 @@ services:
       KEYCLOAK_USER: 'admin'
       KEYCLOAK_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KEYCLOAK_HOSTNAME: ${HOSTNAME}
-      KEYCLOAK_HTTP_PORT: 8080
+      KEYCLOAK_HTTP_PORT: 80
       PROXY_ADDRESS_FORWARDING: 'true'
     networks:
       - api
@@ -139,6 +139,11 @@ services:
       - keycloak-postgresql
     labels:
       - "traefik.enable=true"
+      - "traefik.port=8080"
+      - "traefik.protocol=http"
+      - "traefik.frontend.rule=Host:${HOSTNAME}"
+      - "traefik.frontend.passHostHeader=true"
+      - "traefik.backend.loadbalancer.stickiness=true"
       - "traefik.http.routers.keycloak.rule=Host(`${HOSTNAME}`) && PathPrefix(`/auth`)"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
 
