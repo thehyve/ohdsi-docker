@@ -6,6 +6,11 @@ services:
       context: images/ohdsi-r-base
       args:
         GITHUB_PAT: ${GITHUB_PAT}
+        CDM5_POSTGRESQL_USER: ${CDM5_POSTGRESQL_USER}
+        CDM5_POSTGRESQL_PASSWORD: ${CDM5_POSTGRESQL_PASSWORD}
+        CDM5_POSTGRESQL_SERVER: ${CDM5_POSTGRESQL_SERVER}
+        CDM5_POSTGRESQL_CDM_SCHEMA: ${CDM5_POSTGRESQL_CDM_SCHEMA}
+        CDM5_POSTGRESQL_OHDSI_SCHEMA: ${CDM5_POSTGRESQL_OHDSI_SCHEMA}
     depends_on:
       - postgresql
     networks:

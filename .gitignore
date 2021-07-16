@@ -1,4 +1,5 @@
 .env
+images/ohdsi-r-base/localdata
 etc/letsencrypt/acme.json
 data/vocabulary/*.csv
 data/vocabulary/*.gz
